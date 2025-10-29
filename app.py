@@ -9,7 +9,7 @@ from datetime import timedelta, datetime
 import uuid
 
 app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', '484844884848484wdgdugd2dw22wnkjdndb3dhdjud3u345')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', '484848484848484848484848484848484848484884848swkjhdjwbjhjdh3djbjd3484848484848484')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=365)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
@@ -241,14 +241,27 @@ def create_prompt():
         current_user = get_jwt_identity()
         username = current_user['username']
         
-        # Check if it's form data or JSON
+        print(f"Creating prompt for user: {username}")
+        print(f"Content type: {request.content_type}")
+        
+        # Check if it's form data
         if request.content_type and 'multipart/form-data' in request.content_type:
+            print("Processing form data...")
+            
             title = request.form.get('title')
             tagline = request.form.get('tagline')
             model = request.form.get('model')
             text = request.form.get('text')
             image_file = request.files.get('image')
+            
+            print(f"Title: {title}")
+            print(f"Tagline: {tagline}")
+            print(f"Model: {model}")
+            print(f"Text length: {len(text) if text else 0}")
+            print(f"Image file: {image_file.filename if image_file else 'None'}")
+            
         else:
+            print("Processing JSON data...")
             data = request.get_json()
             title = data.get('title')
             tagline = data.get('tagline')
@@ -257,19 +270,27 @@ def create_prompt():
             image_file = None
         
         if not all([title, tagline, model, text]):
-            return jsonify({"error": "All fields are required"}), 400
+            missing = []
+            if not title: missing.append('title')
+            if not tagline: missing.append('tagline')
+            if not model: missing.append('model')
+            if not text: missing.append('text')
+            return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 422
         
         # Handle image upload
         image_url = None
         if image_file and image_file.filename:
+            print(f"Processing image: {image_file.filename}")
             if allowed_file(image_file.filename):
                 filename = secure_filename(image_file.filename)
                 unique_filename = f"{uuid.uuid4().hex}_{filename}"
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                print(f"Saving image to: {filepath}")
                 image_file.save(filepath)
                 image_url = f"/uploads/{unique_filename}"
+                print(f"Image saved: {image_url}")
             else:
-                return jsonify({"error": "File type not allowed"}), 400
+                return jsonify({"error": "File type not allowed. Allowed types: png, jpg, jpeg, webp, gif"}), 422
         
         # Create new prompt
         new_prompt = {
@@ -288,9 +309,12 @@ def create_prompt():
         prompts.append(new_prompt)
         save_prompts(prompts)
         
+        print(f"Prompt created successfully: {new_prompt['id']}")
         return jsonify(new_prompt), 201
+        
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Error creating prompt: {str(e)}")
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 @app.route('/api/prompts/<prompt_id>', methods=['PUT'])
 @jwt_required()
