@@ -9,7 +9,7 @@ from datetime import timedelta, datetime
 import uuid
 
 app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-super-secret-jwt-key-change-in-production')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', '484844884848484wdgdugd2dw22wnkjdndb3dhdjud3u345')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=365)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
